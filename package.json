@@ -36,14 +36,14 @@
         "compile": "hardhat compile",
         "console": "hardhat console",
         "verify": "yarn hint && yarn test",
-        "test": "yarn hardhat test --network hardhat",
+        "test": "yarn hardhat test --network hardhat --deploy-fixture",
         "typechain": "hardhat typechain",
         "chain": "hardhat node --no-deploy",
         "deploy": "hardhat deploy",
-        "lint": "yarn solhint 'contracts/**/*.sol' && yarn prettier -c 'tests/**/*.ts'",
+        "lint": "yarn solhint 'contracts/**/*.sol' && yarn prettier -c 'test/**/*.ts'",
         "format:sol": "yarn prettier --write contracts/**",
-        "format": "yarn format:sol && yarn prettier --write tests/**/*.ts",
+        "format": "yarn format:sol && yarn prettier --write test/**/*.ts",
         "hint": "solhint \"contracts/**/*.sol\"",
-        "coverage": "yarn hardhat coverage  --testfiles \"tests/**/*.ts\""
+        "coverage": "yarn hardhat coverage  --testfiles \"test/**/*.ts\""
     }
 }
