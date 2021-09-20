@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 
 import "../interfaces/AggregatorInterface.sol";
 
-
 contract AggregatorMock is AggregatorInterface {
     int256 private immutable _answer;
 

@@ -6,8 +6,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract WrappedTokenMock is ERC20, Ownable {
-    event  Deposit(address indexed dst, uint wad);
-    event  Withdrawal(address indexed src, uint wad);
+    event Deposit(address indexed dst, uint256 wad);
+    event Withdrawal(address indexed src, uint256 wad);
 
     // solhint-disable-next-line no-empty-blocks
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
@@ -33,7 +33,7 @@ contract WrappedTokenMock is ERC20, Ownable {
         emit Deposit(msg.sender, msg.value);
     }
 
-    function withdraw(uint wad) public {
+    function withdraw(uint256 wad) public {
         require(balanceOf(msg.sender) >= wad, "WTM: not enough balance");
         _burn(msg.sender, wad);
         payable(msg.sender).transfer(wad);

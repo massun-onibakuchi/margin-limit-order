@@ -9,7 +9,7 @@ import "./interfaces/WrappedTokenInterface.sol";
 contract InteractiveNotificationReceiverMock is InteractiveNotificationReceiver {
     using ArgumentsDecoder for bytes;
 
-    event Received(address, uint);
+    event Received(address, uint256);
 
     receive() external payable {
         emit Received(msg.sender, msg.value);
@@ -17,10 +17,10 @@ contract InteractiveNotificationReceiverMock is InteractiveNotificationReceiver 
 
     // unwrap takerAsset for tests
     function notifyFillOrder(
-        address /* taker */,
-        address /* makerAsset */,
+        address, /* taker */
+        address, /* makerAsset */
         address takerAsset,
-        uint256 /* makingAmount */,
+        uint256, /* makingAmount */
         uint256 takingAmount,
         bytes calldata interactiveData
     ) external override {
