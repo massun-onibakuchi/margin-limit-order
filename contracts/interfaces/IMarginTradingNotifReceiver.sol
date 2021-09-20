@@ -9,7 +9,8 @@ interface IMarginTradingNotifReceiver is InteractiveNotificationReceiver {
     struct MarginOrderData {
         ILendingProtocol lendingPool;
         address wallet;
-        uint256 initialLeverage;
+        // uint256 initialLeverage;
+        uint256 takerAmount;
         uint256 amtToLend;
         uint256 amtToBorrow;
         bool useVault;

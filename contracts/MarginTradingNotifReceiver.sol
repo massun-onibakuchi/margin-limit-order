@@ -3,6 +3,7 @@ pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+import "./limit-order-protocol/LimitOrderProtocol.sol";
 import "./limit-order-protocol/interfaces/InteractiveNotificationReceiver.sol";
 import "./interfaces/IMarginTradingNotifReceiver.sol";
 import "./interfaces/ILendingProtocol.sol";
@@ -29,6 +30,13 @@ contract MarginTradingNotifReceiver is IMarginTradingNotifReceiver {
         IVault(vault).withdraw(token, msg.sender, msg.sender, amount);
     }
 
+    /// @notice Callback, for to notify maker on order execution.
+    /// @param taker limitOrderProtocol address
+    /// @param makerAsset asset which maker account want to sell
+    /// @param takerAsset asset which maker account want to bought
+    /// @param makingAmount amounts of maker asset
+    /// @param takingAmount amounts of taker asset
+    /// @param interactiveData arbitrary data
     function notifyFillOrder(
         address taker,
         address makerAsset,
@@ -44,65 +52,62 @@ contract MarginTradingNotifReceiver is IMarginTradingNotifReceiver {
 
         require(lendingProtocols[address(pool)], "not-approved-lending-protocol");
         require(
-            marginOrderData.amtToLend >= takingAmount || makingAmount >= marginOrderData.amtToBorrow,
+            marginOrderData.amtToLend >= takingAmount || marginOrderData.amtToBorrow >= makingAmount,
             "invalid-amount"
         );
 
-        // Deposit collateral which maker buy and then borrow asset which maker would sell
-        _lend(
-            pool,
-            takerAsset,
-            marginOrderData.wallet,
-            marginOrderData.amtToLend,
-            takingAmount,
-            marginOrderData.useVault,
-            marginOrderData.data
-        );
+        uint256 amtToPull = marginOrderData.amtToLend - marginOrderData.takerAmount;
+        uint256 pullingAmount = (amtToPull * takingAmount) / marginOrderData.takerAmount;
+        uint256 amtToDeposit = pullingAmount + takingAmount;
+
+        // In addition to `takingAmount`, pull additional tokens to deposit as collateral.
+        _pullTokens(IERC20(takerAsset), marginOrderData.wallet, pullingAmount, marginOrderData.useVault);
+
+        // Deposit collateral which maker buy and then borrow asset which maker would sell.
+        _lend(pool, takerAsset, marginOrderData.wallet, amtToDeposit, takingAmount, marginOrderData.data);
         _borrow(
             pool,
             makerAsset,
             marginOrderData.wallet,
             marginOrderData.amtToBorrow,
             makingAmount,
-            marginOrderData.useVault,
             marginOrderData.data
         );
 
         // Transfer borrowed asset to wallet address.
         uint256 amtToSell = IERC20(makerAsset).balanceOf(address(this));
-        require(amtToSell >= marginOrderData.amtToBorrow, "inconsistent-balance");
+        require(makingAmount >= amtToSell, "inconsistent-balance");
         IERC20(makerAsset).safeTransfer(marginOrderData.wallet, amtToSell);
+    }
+
+    function _pullTokens(
+        IERC20 token,
+        address onBehalfOf,
+        uint256 amount,
+        bool useVault
+    ) internal {
+        if (useVault) {
+            IVault(vault).transferToReceiver(token, onBehalfOf, amount);
+        } else {
+            token.safeTransferFrom(onBehalfOf, address(this), amount);
+        }
     }
 
     /// @param pool lending protocols
     /// @param takerAsset taker asset i.e. asset which maker account bought
     /// @param onBehalfOf debt being incurred by `onBehalfOf`
-    /// @param amtToLend amount to deposit to lending protocol
+    /// @param amtToDeposit amount to deposit to lending protocol
     /// @param takingAmount amounts of taker asset
     /// @param data arbitrary data
     function _lend(
         ILendingProtocol pool,
         address takerAsset,
         address onBehalfOf,
-        uint256 amtToLend,
+        uint256 amtToDeposit,
         uint256 takingAmount,
-        bool useVault,
         bytes memory data
     ) internal {
-        // require(amtToLend >= takingAmount, "making-amount-gt-amount-to-lend");
-        uint256 amtToPull = amtToLend - takingAmount;
-        if (amtToPull > 0) {
-            if (useVault) {
-                IVault(vault).transferToReceiver(IERC20(takerAsset), onBehalfOf, amtToPull);
-            } else {
-                IERC20(takerAsset).safeTransferFrom(onBehalfOf, address(this), amtToPull);
-            }
-        }
-        // uint256 depositBalance = takingAmount + IERC20(takerAsset).balanceOf(address(this));
-        // require(depositBalance >= amtToLend, "short-of-amt-to-lend");
-
-        // IERC20(takerAsset).transfer(address(pool), depositBalance);
-        IERC20(takerAsset).transfer(address(pool), amtToLend);
+        IERC20(takerAsset).transfer(address(pool), amtToDeposit);
         pool.lend(IERC20(takerAsset), onBehalfOf, data);
     }
 
@@ -119,18 +124,16 @@ contract MarginTradingNotifReceiver is IMarginTradingNotifReceiver {
         address onBehalfOf,
         uint256 amtToBorrow,
         uint256 makingAmount,
-        bool useVault,
         bytes memory data
     ) internal {
-        uint256 amtToPull = makingAmount - amtToBorrow;
-        if (amtToPull > 0) {
-            if (useVault) {
-                IVault(vault).transferToReceiver(IERC20(makerAsset), onBehalfOf, amtToPull);
-            } else {
-                IERC20(makerAsset).safeTransferFrom(onBehalfOf, address(this), amtToPull);
-            }
-        }
-
+        // uint256 amtToPull = makingAmount - amtToBorrow;
+        // if (amtToPull > 0) {
+        //     if (useVault) {
+        //         IVault(vault).transferToReceiver(IERC20(makerAsset), onBehalfOf, amtToPull);
+        //     } else {
+        //         IERC20(makerAsset).safeTransferFrom(onBehalfOf, address(this), amtToPull);
+        //     }
+        // }
         pool.borrow(IERC20(makerAsset), amtToBorrow, onBehalfOf, data);
     }
 
