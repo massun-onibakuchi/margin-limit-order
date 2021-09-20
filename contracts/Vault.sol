@@ -76,7 +76,7 @@ abstract contract BaseVault is IVault {
         // Interactions
         if (token_ == USE_ETHEREUM) {
             IWETH(address(wethToken)).withdraw(amount);
-
+            // solhint-disable-next-line
             (bool success, ) = to.call{ value: amount }("");
             require(success, "eth-transfer-failed");
         } else {

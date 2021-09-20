@@ -11,7 +11,7 @@ const notifReceiverDeployment: DeployFunction = async (hre: HardhatRuntimeEnviro
 
     const options = { from: owner }
     const weth = await deploy("WETH", options)
-    const token0 = await deploy("ERC20Mock", { ...options, args: ["Dai Stable Coin", "DAI"] })
+    const token = await deploy("ERC20Mock", { ...options, args: ["Dai Stable Coin", "DAI"] })
 
     const vault = await deploy("Vault", { ...options, args: [limitOrderProtocol.address, weth.address] })
     const notifReceiver = await deploy("MarginTradingNotifReceiver", {
