@@ -20,6 +20,9 @@ export const setupTest = deployments.createFixture(async ({ deployments, getName
     )
 
     await deployedContracts["ERC20Mock"].mint(wallet, ethers.utils.parseEther("1"))
+    await deployedContracts["WETH"]
+        .connect(await ethers.getSigner(wallet))
+        .deposit({ value: ethers.utils.parseEther("1") })
 
     return deployedContracts
 })
