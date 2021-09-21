@@ -129,7 +129,7 @@ contract Vault is Ownable, BaseVault {
         _withdraw(token, from, msg.sender, amount);
     }
 
-    function addReceiver(address notifReceiver) external onlyOwner {
+    function approveReceiver(address notifReceiver) external onlyOwner {
         approvedReceiver[notifReceiver] = true;
     }
 

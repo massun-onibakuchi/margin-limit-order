@@ -2,6 +2,7 @@
 pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
 import "./limit-order-protocol/interfaces/InteractiveNotificationReceiver.sol";
 import "./interfaces/IMarginTradingNotifReceiver.sol";
@@ -15,11 +16,11 @@ contract AaveLendingProtocol is ILendingProtocol {
 
     address public immutable vault;
 
-    IAaveLendingPoolProviderV2 public immutable provider;
+    IAaveLendingPoolProviderV2 public immutable aaveProvider;
 
     constructor(address _vault, IAaveLendingPoolProviderV2 _provider) {
         vault = _vault;
-        provider = _provider;
+        aaveProvider = _provider;
     }
 
     /// @notice Deposit `token` to a Lending protocol. Only white listed caller can call this method.
@@ -33,8 +34,8 @@ contract AaveLendingProtocol is ILendingProtocol {
         bytes memory data
     ) external override onlyApprovedCaller {
         uint256 amount = token.balanceOf(address(this));
-        uint256 amountInWei;
-        AaveLendingPoolV2 lendingPool = AaveLendingPoolV2(provider.getLendingPool());
+        uint256 amountInWei = _convertDecimals(address(token), amount);
+        IAaveLendingPoolV2 lendingPool = IAaveLendingPoolV2(aaveProvider.getLendingPool());
 
         token.safeApprove(address(lendingPool), amount);
         lendingPool.deposit(address(token), amountInWei, onBehalfOf, 0);
@@ -53,11 +54,25 @@ contract AaveLendingProtocol is ILendingProtocol {
         bytes memory data
     ) external override onlyApprovedCaller {
         uint256 interestRateMode = abi.decode(data, (uint256));
-        uint256 amountInWei = amount;
-        AaveLendingPoolV2 lendingPool = AaveLendingPoolV2(provider.getLendingPool());
+        uint256 amountInWei = _convertDecimals(address(token), amount);
+        IAaveLendingPoolV2 lendingPool = IAaveLendingPoolV2(aaveProvider.getLendingPool());
 
         lendingPool.borrow(address(token), amountInWei, interestRateMode, 0, onBehalfOf);
         token.transfer(msg.sender, token.balanceOf(address(this)));
+    }
+
+    function _convertDecimals(address token, uint256 amount) internal view returns (uint256) {
+        bytes memory result = Address.functionStaticCall(
+            token,
+            abi.encodeWithSignature("decimals()"),
+            "call-token-dicimals-failed"
+        );
+        uint256 decimasls = uint256(abi.decode(result, (uint8)));
+        if (decimasls < 18) {
+            return (amount * 1e18) / 10**decimasls;
+        } else {
+            return amount / 10**(decimasls - 18);
+        }
     }
 
     modifier onlyApprovedCaller() {
