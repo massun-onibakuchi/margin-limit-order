@@ -1,6 +1,6 @@
 import { deployments, ethers, getNamedAccounts } from "hardhat"
 import { expect, use } from "chai"
-import { BigNumberish, Contract } from "ethers"
+import { BigNumber, BigNumberish, Contract } from "ethers"
 import {
     WrappedTokenMock,
     TokenMock,
@@ -8,6 +8,8 @@ import {
     InteractiveNotificationReceiverMock,
     IERC20,
 } from "../typechain"
+const ethSigUtil = require("eth-sig-util")
+
 import { buildOrderData, cutLastArg } from "./helpers/utils"
 
 use(require("chai-bignumber")())
@@ -83,15 +85,15 @@ describe("LimitOrderProtocol", async function () {
     let weth: WrappedTokenMock
     let swap: LimitOrderProtocol
     let notificationReceiver: InteractiveNotificationReceiverMock
-    const { owner: ownerAddr, wallet, receiver } = await getNamedAccounts()
+    const { owner, wallet, receiver } = await getNamedAccounts()
     const signer1 = await ethers.getSigner(wallet)
-    const owner = await ethers.getSigner(ownerAddr)
     const deployedContracts: { [name: string]: Contract } = {}
 
     beforeEach(async function () {
+        const deployer = await ethers.getSigner(owner)
         const results = await deployments.fixture(["LimitOrderProtocol"])
         for (const [name, result] of Object.entries(results)) {
-            deployedContracts[name] = await ethers.getContractAt(name, result.address, owner)
+            deployedContracts[name] = await ethers.getContractAt(name, result.address, deployer)
         }
         ;({
             LimitOrderProtocol: swap,
@@ -131,8 +133,20 @@ describe("LimitOrderProtocol", async function () {
             interaction,
             notificationReceiver.address,
         )
-        const data = buildOrderData(chainId, swap.address, order)
-        const signature = await account._signTypedData(data.domain, data.types, data.message)
+        const data = buildOrderData(chainId.toNumber(), swap.address, order)
+
+        const signature = await account._signTypedData(data.domain, { Order: data.types.Order }, data.message)
+        console.log("signature :>> ", signature)
+
+        // const signature2 = ethSigUtil.signTypedData(
+        //     Buffer.from(account.privateKey.substring(2, 66), "hex"),
+        //     {
+        //         // data,
+        //         data: { primaryType: "Order", domain: data.domain, types: data.types, message: data.message },
+        //     },
+        //     "v4",
+        // )
+        console.log("signature2 :>> ", signature2)
 
         const makerDai = await dai.balanceOf(wallet)
         const takerDai = await dai.balanceOf(receiver)
@@ -140,7 +154,7 @@ describe("LimitOrderProtocol", async function () {
         const takerWeth = await weth.balanceOf(receiver)
         const makerEth = await ethers.provider.getBalance(wallet)
 
-        await swap.fillOrder(order, signature, 1, 0, 1)
+        await swap.connect(await ethers.getSigner(account.address)).fillOrder(order, signature, 1, 0, 1)
 
         expect(await dai.balanceOf(wallet)).to.equal(makerDai.sub(1))
         expect(await dai.balanceOf(receiver)).to.equal(takerDai.add(1))

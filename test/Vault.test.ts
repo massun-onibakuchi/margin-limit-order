@@ -17,10 +17,6 @@ describe("CreamAccountDataProvider", async function () {
     let notifReceiver: MarginTradingNotifReceiver
     let aave: AaveLendingProtocol
     beforeEach(async function () {
-        // const results = await deployments.fixture(["NotifReceiver"])
-        // for (const [name, result] of Object.entries(results)) {
-        //     console.log("name,result.address :>> ", name, result.address)
-        // }
         ;({
             ERC20Mock: token,
             WETH: weth,

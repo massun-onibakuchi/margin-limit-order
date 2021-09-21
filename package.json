@@ -30,7 +30,8 @@
     },
     "dependencies": {
         "@1inch/limit-order-protocol": "^1.4.0",
-        "@openzeppelin/contracts": "^4.3.2"
+        "@openzeppelin/contracts": "^4.3.2",
+        "eth-sig-util": "^3.0.1"
     },
     "scripts": {
         "compile": "hardhat compile",

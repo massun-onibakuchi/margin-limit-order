@@ -57,6 +57,9 @@ const config: HardhatUserConfig = {
         receiver: {
             default: 2,
         },
+        recipient: {
+            default: 2,
+        },
         account: {
             default: 3,
         },

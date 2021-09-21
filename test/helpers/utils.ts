@@ -24,7 +24,7 @@ const Order = [
 export const name = "1inch Limit Order Protocol"
 export const version = "2"
 
-export function buildOrderData(chainId, verifyingContract, order) {
+export function buildOrderData(chainId: number, verifyingContract: string, order) {
     return {
         primaryType: "Order",
         types: { EIP712Domain, Order },
