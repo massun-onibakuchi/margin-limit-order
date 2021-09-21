@@ -1,14 +1,22 @@
 import { ethers, deployments, getNamedAccounts } from "hardhat"
 import { expect, use } from "chai"
 import { BigNumber } from "ethers"
-import { AaveLendingProtocol, ERC20Mock, IWETH, MarginTradingNotifReceiver, Vault } from "../typechain"
+import {
+    AaveLendingProtocol,
+    ERC20Mock,
+    IWETH,
+    LimitOrderProtocol,
+    MarginTradingNotifReceiver,
+    Vault,
+} from "../typechain"
 import { setupTest } from "./fixtures"
+
 use(require("chai-bignumber")())
 
 const toWei = ethers.utils.parseEther
 const EXP_SCALE = toWei("1")
 
-describe("Vault", async function () {
+describe("MarginTradingNotifReceiver", async function () {
     const { owner, wallet } = await getNamedAccounts()
 
     let token: ERC20Mock
@@ -16,6 +24,7 @@ describe("Vault", async function () {
     let vault: Vault
     let notifReceiver: MarginTradingNotifReceiver
     let aave: AaveLendingProtocol
+    let swap: LimitOrderProtocol
     beforeEach(async function () {
         ;({
             ERC20Mock: token,
