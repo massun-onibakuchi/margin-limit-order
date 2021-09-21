@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.4;
 
-interface AaveLendingPoolV2 {
+interface IAaveLendingPoolV2 {
     function deposit(
         address asset,
         uint256 amount,
