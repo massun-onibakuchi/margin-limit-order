@@ -9,10 +9,6 @@ contract WETH is ERC20("Wrapped ETH", "WETH") {
 
     receive() external payable {}
 
-    function getChainId() external view returns (uint256) {
-        return block.chainid;
-    }
-
     function deposit() public payable {
         _mint(msg.sender, msg.value);
         // balanceOf[msg.sender] += msg.value;

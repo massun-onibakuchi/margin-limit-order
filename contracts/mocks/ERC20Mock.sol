@@ -16,8 +16,4 @@ contract ERC20Mock is ERC20, Ownable {
     function burn(address account, uint256 amount) external {
         _burn(account, amount);
     }
-
-    function getChainId() external view returns (uint256) {
-        return block.chainid;
-    }
 }

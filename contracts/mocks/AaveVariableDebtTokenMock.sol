@@ -50,7 +50,7 @@ contract AaveVariableDebtTokenMock is ERC20("VariableDaiDebt", "VariableDaiDebt"
         address onBehalfOf,
         uint256 amount,
         uint256 index
-    ) external returns(bool) {
+    ) external returns (bool) {
         if (user != onBehalfOf) {
             _decreaseBorrowAllowance(onBehalfOf, user, amount);
         }
