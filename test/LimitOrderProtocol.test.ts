@@ -1,95 +1,27 @@
 import { deployments, ethers, getNamedAccounts } from "hardhat"
 import { expect, use } from "chai"
-import { BigNumber, BigNumberish, Contract } from "ethers"
-import {
-    WrappedTokenMock,
-    TokenMock,
-    LimitOrderProtocol,
-    InteractiveNotificationReceiverMock,
-    IERC20,
-} from "../typechain"
-const ethSigUtil = require("eth-sig-util")
-
-import { buildOrderData, cutLastArg } from "./helpers/utils"
+import { Contract } from "ethers"
+import { LimitOrderProtocol, InteractiveNotificationReceiverMock, ERC20Mock, WETH } from "../typechain"
+import { buildOrder } from "./helpers/order"
+import { buildOrderData } from "./helpers/utils"
 
 use(require("chai-bignumber")())
 const toWei = ethers.utils.parseEther
+const zeroAddress = ethers.constants.AddressZero
 
 describe("LimitOrderProtocol", async function () {
-    const privatekey = "59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
-    const account = new ethers.Wallet(Buffer.from(privatekey, "hex"))
-
-    const zeroAddress = ethers.constants.AddressZero
-
-    function buildOrder(
-        exchange: LimitOrderProtocol,
-        makerAsset: IERC20,
-        takerAsset: IERC20,
-        makerAmount: BigNumberish,
-        takerAmount: BigNumberish,
-        taker = zeroAddress,
-        predicate = "0x",
-        permit = "0x",
-        interaction = "0x",
-        customReciever?: string,
-    ) {
-        return buildOrderWithSalt(
-            exchange,
-            "1",
-            makerAsset,
-            takerAsset,
-            makerAmount,
-            takerAmount,
-            taker,
-            predicate,
-            permit,
-            interaction,
-            customReciever,
-        )
-    }
-
-    function buildOrderWithSalt(
-        exchange: LimitOrderProtocol,
-        salt: string,
-        makerAsset: IERC20,
-        takerAsset: IERC20,
-        makerAmount: BigNumberish,
-        takerAmount: BigNumberish,
-        taker = zeroAddress,
-        predicate = "0x",
-        permit = "0x",
-        interaction = "0x",
-        customReciever?,
-    ) {
-        const receiver = customReciever === undefined ? wallet : customReciever
-        return {
-            salt: salt,
-            makerAsset: makerAsset.address,
-            takerAsset: takerAsset.address,
-            makerAssetData: makerAsset.interface.encodeFunctionData("transferFrom", [wallet, taker, makerAmount]),
-            takerAssetData: takerAsset.interface.encodeFunctionData("transferFrom", [taker, receiver, takerAmount]),
-            getMakerAmount: cutLastArg(
-                exchange.interface.encodeFunctionData("getMakerAmount", [makerAmount, takerAmount, 0]),
-            ),
-            getTakerAmount: cutLastArg(
-                exchange.interface.encodeFunctionData("getTakerAmount", [makerAmount, takerAmount, 0]),
-            ),
-            predicate: predicate,
-            permit: permit,
-            interaction: interaction,
-        }
-    }
-
-    let chainId
-    let dai: TokenMock
-    let weth: WrappedTokenMock
+    const { chainId } = await ethers.provider.getNetwork()
+    let dai: ERC20Mock
+    let weth: WETH
     let swap: LimitOrderProtocol
     let notificationReceiver: InteractiveNotificationReceiverMock
-    const { owner, wallet, receiver } = await getNamedAccounts()
-    const signer1 = await ethers.getSigner(wallet)
+    const { wallet, taker: takerAddr } = await getNamedAccounts()
+    const signer = await ethers.getSigner(wallet) // maker
+    const taker = await ethers.getSigner(takerAddr)
     const deployedContracts: { [name: string]: Contract } = {}
 
     beforeEach(async function () {
+        const { owner } = await getNamedAccounts()
         const deployer = await ethers.getSigner(owner)
         const results = await deployments.fixture(["LimitOrderProtocol"])
         for (const [name, result] of Object.entries(results)) {
@@ -97,69 +29,58 @@ describe("LimitOrderProtocol", async function () {
         }
         ;({
             LimitOrderProtocol: swap,
-            TokenMock: dai,
-            WrappedTokenMock: weth,
+            ERC20Mock: dai,
+            WETH: weth,
             InteractiveNotificationReceiverMock: notificationReceiver,
         } = deployedContracts as any)
 
-        chainId = await dai.getChainId()
+        await dai.mint(signer.address, toWei("1"))
+        await dai.mint(taker.address, toWei("1"))
+        await weth.connect(signer).deposit({ value: toWei("1") })
+        await weth.connect(taker).deposit({ value: toWei("1") })
 
-        await dai.mint(wallet, "1000000")
-        await weth.mint(wallet, "1000000")
-        await dai.mint(receiver, "1000000")
-        await weth.mint(receiver, "1000000")
-
-        await dai.connect(await ethers.getSigner(account.address)).approve(swap.address, "1000000")
-        await weth.connect(await ethers.getSigner(account.address)).approve(swap.address, "1000000")
-        await dai.connect(signer1).approve(swap.address, "1000000")
-        await weth.connect(signer1).approve(swap.address, "1000000")
+        await dai.connect(signer).approve(swap.address, toWei("1"))
+        await weth.connect(signer).approve(swap.address, toWei("1"))
+        await dai.connect(taker).approve(swap.address, toWei("1"))
+        await weth.connect(taker).approve(swap.address, toWei("1"))
     })
 
     it("Interaction - should fill and unwrap token", async function () {
-        const amount = toWei("1")
-        await signer1.sendTransaction({ to: weth.address, value: amount })
+        // signer who is a maker would sell his DAI to buy WETH
 
         const interaction = notificationReceiver.address + wallet.substr(2)
 
         const order = buildOrder(
             swap,
-            dai,
-            weth,
-            1,
-            1,
+            dai, // Asset which maker want to sell
+            weth, // Asset which maker want to buy
+            1, // makerAsset
+            1, // takerAsset
+            signer.address, // maker
             zeroAddress,
             swap.interface.encodeFunctionData("timestampBelow", [0xff00000000]),
             "0x",
             interaction,
-            notificationReceiver.address,
+            notificationReceiver.address, // CustomReceiver
         )
-        const data = buildOrderData(chainId.toNumber(), swap.address, order)
+        const data = buildOrderData(chainId, swap.address, order)
+        const signature = await signer._signTypedData(data.domain, { Order: data.types.Order }, data.message)
 
-        const signature = await account._signTypedData(data.domain, { Order: data.types.Order }, data.message)
-        console.log("signature :>> ", signature)
+        const signerDai = await dai.balanceOf(signer.address)
+        const takerDai = await dai.balanceOf(taker.address)
+        const signerWeth = await weth.balanceOf(signer.address)
+        const takerWeth = await weth.balanceOf(taker.address)
+        const signerEth = await ethers.provider.getBalance(signer.address)
 
-        // const signature2 = ethSigUtil.signTypedData(
-        //     Buffer.from(account.privateKey.substring(2, 66), "hex"),
-        //     {
-        //         // data,
-        //         data: { primaryType: "Order", domain: data.domain, types: data.types, message: data.message },
-        //     },
-        //     "v4",
-        // )
-        // console.log("signature2 :>> ", signature2)
+        // unwrap WETH which maker would buy and send
+        await swap
+            .connect(taker)
+            .fillOrder(order, signature, 1 /* makingAmount */, 0 /* takingAmount */, 1 /* thresholdAmount */)
 
-        const makerDai = await dai.balanceOf(wallet)
-        const takerDai = await dai.balanceOf(receiver)
-        const makerWeth = await weth.balanceOf(wallet)
-        const takerWeth = await weth.balanceOf(receiver)
-        const makerEth = await ethers.provider.getBalance(wallet)
-
-        await swap.connect(await ethers.getSigner(account.address)).fillOrder(order, signature, 1, 0, 1)
-
-        expect(await dai.balanceOf(wallet)).to.equal(makerDai.sub(1))
-        expect(await dai.balanceOf(receiver)).to.equal(takerDai.add(1))
-        expect(await weth.balanceOf(wallet)).to.equal(makerWeth)
-        expect(await ethers.provider.getBalance(wallet)).to.equal(makerEth.add(1))
-        expect(await weth.balanceOf(receiver)).to.equal(takerWeth.sub(1))
+        expect(await ethers.provider.getBalance(signer.address)).to.equal(signerEth.add(1))
+        expect(await dai.balanceOf(signer.address)).to.equal(signerDai.sub(1))
+        expect(await dai.balanceOf(taker.address)).to.equal(takerDai.add(1))
+        expect(await weth.balanceOf(signer.address)).to.equal(signerWeth)
+        expect(await weth.balanceOf(taker.address)).to.equal(takerWeth.sub(1))
     })
 })
