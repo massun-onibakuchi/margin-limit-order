@@ -20,7 +20,7 @@ describe("AaveLendingProtocol", async function () {
     const signer = await ethers.getSigner(wallet)
     const owner = await ethers.getSigner(ownerAddr)
     const amount = toWei("1")
-    const interestModel = ethers.utils.defaultAbiCoder.encode(["uint256"], [1])
+    const interestModel = ethers.utils.defaultAbiCoder.encode(["uint256"], [2])
 
     let dai: ERC20Mock
     let weth: WETH
@@ -58,7 +58,7 @@ describe("AaveLendingProtocol", async function () {
     })
     it("Deposit - can onlyApprovedCaller", async function () {
         await weth.connect(signer).transfer(aave.address, amount)
-        await expect(aave.connect(signer).lend(weth.address, recipient, "")).to.be.reverted
+        await expect(aave.connect(signer).lend(weth.address, recipient, "0x")).to.be.reverted
     })
     it("Deposit - deposit on behalf of recipient", async function () {
         const balanceBefore = await weth.balanceOf(aWeth.address)
@@ -88,7 +88,7 @@ describe("AaveLendingProtocol", async function () {
         // Credit delegation to AaveLendingProtocol
         await debtDai.connect(await ethers.getSigner(recipient)).approveDelegation(aave.address, amtToBorrow)
         expect(await debtDai.borrowAllowance(recipient, aave.address)).eq(amtToBorrow)
-        // Borrow
+        // Borrow WETH using `recipient` 's credit, and then transfer the WETH to `recipient`
         await aave.connect(owner).borrow(dai.address, amtToBorrow, recipient, interestModel)
         expect(await dai.balanceOf(aave.address)).to.eq(0)
         expect(await dai.balanceOf(aDai.address)).to.eq(balanceBefore.sub(amtToBorrow))

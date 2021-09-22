@@ -88,7 +88,7 @@ contract AaveLendingPoolMockV2 is IAaveLendingPoolV2 {
     ) external override {
         address user = msg.sender;
 
-        if (interestRateMode == 1) {
+        if (interestRateMode == 2) {
             AaveVariableDebtTokenMock(_assetReserveData[asset].variableDebtTokenAddress).mint(
                 user,
                 onBehalfOf,
@@ -98,7 +98,7 @@ contract AaveLendingPoolMockV2 is IAaveLendingPoolV2 {
             // Pass check
             address assetToBorrow = _assetReserveData[asset].aTokenAddress;
             IAToken(assetToBorrow).transferUnderlyingTo(user, amount);
-        } else if (interestRateMode == 0) {
+        } else if (interestRateMode == 1) {
             // AaveStableDebtTokenMock(_assetReserveData[asset].stableDebtTokenAddress)
         } else revert("aave-mock-borrow-failed");
     }

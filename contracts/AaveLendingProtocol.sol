@@ -11,6 +11,7 @@ import "./interfaces/ILendingProtocol.sol";
 import "./interfaces/IAaveLendingPoolProviderV2.sol";
 import "./interfaces/IAaveLendingPoolV2.sol";
 
+/// @notice Aave wrapper which inherits ILendingProtocol interface.
 contract AaveLendingProtocol is ILendingProtocol {
     using SafeERC20 for IERC20;
 

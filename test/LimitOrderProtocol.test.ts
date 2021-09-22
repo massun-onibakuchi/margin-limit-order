@@ -5,6 +5,9 @@ import { LimitOrderProtocol, InteractiveNotificationReceiverMock, ERC20Mock, WET
 import { buildOrder } from "./helpers/order"
 import { buildOrderData } from "./helpers/utils"
 
+/// @note This test is a modified version of https://github.com/1inch/limit-order-protocol/blob/d72d31dcd60c667545f08692bd4f5c82dffdc314/test/LimitOrderProtocol.js
+///         - web3.js => ethers
+///         - test interaction
 use(require("chai-bignumber")())
 const toWei = ethers.utils.parseEther
 const zeroAddress = ethers.constants.AddressZero
@@ -54,8 +57,8 @@ describe("LimitOrderProtocol", async function () {
             swap,
             dai, // Asset which maker want to sell
             weth, // Asset which maker want to buy
-            1, // makerAsset
-            1, // takerAsset
+            1, // makerAsset Amount
+            1, // takerAsset Amount
             signer.address, // maker
             zeroAddress,
             swap.interface.encodeFunctionData("timestampBelow", [0xff00000000]),

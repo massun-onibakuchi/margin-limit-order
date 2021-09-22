@@ -12,7 +12,7 @@ interface IMarginTradingNotifReceiver is InteractiveNotificationReceiver {
         // uint256 initialLeverage;
         uint256 takerAmount;
         uint256 amtToLend;
-        uint256 amtToBorrow;
+        // uint256 amtToBorrow;
         bool useVault;
         bytes data;
     }
