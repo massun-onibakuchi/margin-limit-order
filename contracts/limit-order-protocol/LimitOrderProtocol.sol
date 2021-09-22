@@ -61,7 +61,7 @@ contract LimitOrderProtocol is
         address makerAsset;
         address takerAsset;
         bytes makerAssetData; // (transferFrom.selector, signer, ______, makerAmount, ...)
-        bytes takerAssetData; // (transferFrom.selector, sender, signer, takerAmount, ...)
+        bytes takerAssetData; // (transferFrom.selector, sender, receiver(signer,or customReceiver), takerAmount, ...)
         bytes getMakerAmount; // this.staticcall(abi.encodePacked(bytes, swapTakerAmount)) => (swapMakerAmount)
         bytes getTakerAmount; // this.staticcall(abi.encodePacked(bytes, swapMakerAmount)) => (swapTakerAmount)
         bytes predicate; // this.staticcall(bytes) => (bool)
