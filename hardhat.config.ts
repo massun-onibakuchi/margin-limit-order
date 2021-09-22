@@ -63,6 +63,9 @@ const config: HardhatUserConfig = {
         account: {
             default: 3,
         },
+        taker: {
+            default: 4,
+        },
     },
     solidity: {
         compilers: [

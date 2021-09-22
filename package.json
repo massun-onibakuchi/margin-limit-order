@@ -29,9 +29,7 @@
         "typescript": "^4.4.3"
     },
     "dependencies": {
-        "@1inch/limit-order-protocol": "^1.4.0",
-        "@openzeppelin/contracts": "^4.3.2",
-        "eth-sig-util": "^3.0.1"
+        "@openzeppelin/contracts": "^4.3.2"
     },
     "scripts": {
         "compile": "hardhat compile",
@@ -42,8 +40,8 @@
         "chain": "hardhat node --no-deploy",
         "deploy": "hardhat deploy",
         "lint": "yarn solhint 'contracts/**/*.sol' && yarn prettier -c 'test/**/*.ts'",
-        "format:sol": "yarn prettier --write contracts/**",
-        "format": "yarn format:sol && yarn prettier --write test/**/*.ts",
+        "format:sol": "yarn prettier --write 'contracts/**/*.sol'",
+        "format": "yarn format:sol && yarn prettier --write 'test/**/*.ts'",
         "hint": "solhint \"contracts/**/*.sol\"",
         "coverage": "yarn hardhat coverage  --testfiles \"test/**/*.ts\""
     }
