@@ -7,11 +7,10 @@ const notifReceiverDeployment: DeployFunction = async (hre: HardhatRuntimeEnviro
     const { deploy, get } = deployments
     const { owner } = await getNamedAccounts()
 
+    const weth = await get("WETH")
     const limitOrderProtocol = await get("LimitOrderProtocol")
 
     const options = { from: owner }
-    const weth = await deploy("WETH", options)
-    const token = await deploy("ERC20Mock", { ...options, args: ["Dai Stable Coin", "DAI"] })
 
     const vault = await deploy("Vault", { ...options, args: [limitOrderProtocol.address, weth.address] })
     const notifReceiver = await deploy("MarginTradingNotifReceiver", {
@@ -21,4 +20,4 @@ const notifReceiverDeployment: DeployFunction = async (hre: HardhatRuntimeEnviro
 }
 export default notifReceiverDeployment
 notifReceiverDeployment.tags = ["NotifReceiver"]
-notifReceiverDeployment.dependencies = ["LimitOrderProtocol"]
+notifReceiverDeployment.dependencies = ["LimitOrderProtocol" /* "MockToken" */]

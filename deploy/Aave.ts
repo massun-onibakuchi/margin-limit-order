@@ -34,7 +34,7 @@ const aaveLendingProtocolDeployment: DeployFunction = async (hre: HardhatRuntime
             [variableDebt.address, ADDRESS_ZERO],
         ],
     })
-
+    // AaveLendingProtocol (Aave wrapper)
     await deploy("AaveLendingProtocol", { ...options, args: [vault.address, provider.address] })
 
     // Set Aave mock
