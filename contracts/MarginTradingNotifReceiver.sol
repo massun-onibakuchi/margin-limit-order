@@ -52,7 +52,7 @@ contract MarginTradingNotifReceiver is IMarginTradingNotifReceiver {
 
         require(lendingProtocols[address(pool)], "not-approved-lending-protocol");
         require(
-            marginOrderData.amtToLend >= takingAmount || marginOrderData.amtToBorrow >= makingAmount,
+            marginOrderData.amtToLend >= takingAmount, /* || marginOrderData.amtToBorrow >= makingAmount */
             "invalid-amount"
         );
 
@@ -65,14 +65,8 @@ contract MarginTradingNotifReceiver is IMarginTradingNotifReceiver {
 
         // Deposit collateral which maker buy and then borrow asset which maker would sell.
         _lend(pool, takerAsset, marginOrderData.wallet, amtToDeposit, takingAmount, marginOrderData.data);
-        _borrow(
-            pool,
-            makerAsset,
-            marginOrderData.wallet,
-            marginOrderData.amtToBorrow,
-            makingAmount,
-            marginOrderData.data
-        );
+
+        _borrow(pool, makerAsset, marginOrderData.wallet, makingAmount, marginOrderData.data);
 
         // Transfer borrowed asset to wallet address.
         uint256 amtToSell = IERC20(makerAsset).balanceOf(address(this));
@@ -115,14 +109,12 @@ contract MarginTradingNotifReceiver is IMarginTradingNotifReceiver {
     /// @param pool lending protocols
     /// @param makerAsset maker asset i.e. asset which maker account sold
     /// @param onBehalfOf debt being incurred by `onBehalfOf`
-    /// @param amtToBorrow amounts to borrow which is less than `makingAmount`
     /// @param makingAmount amounts of maker asset
     /// @param data arbitrary data
     function _borrow(
         ILendingProtocol pool,
         address makerAsset,
         address onBehalfOf,
-        uint256 amtToBorrow,
         uint256 makingAmount,
         bytes memory data
     ) internal {
@@ -134,7 +126,7 @@ contract MarginTradingNotifReceiver is IMarginTradingNotifReceiver {
         //         IERC20(makerAsset).safeTransferFrom(onBehalfOf, address(this), amtToPull);
         //     }
         // }
-        pool.borrow(IERC20(makerAsset), amtToBorrow, onBehalfOf, data);
+        pool.borrow(IERC20(makerAsset), makingAmount, onBehalfOf, data);
     }
 
     function _approveERC20(
