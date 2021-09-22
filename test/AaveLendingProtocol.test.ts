@@ -1,15 +1,11 @@
-import { ethers, deployments, getNamedAccounts } from "hardhat"
+import { ethers, getNamedAccounts } from "hardhat"
 import { expect, use } from "chai"
-import { BigNumber } from "ethers"
 import {
     AaveLendingPoolMockV2,
-    AaveLendingPoolProviderMock,
     AaveLendingProtocol,
     AaveVariableDebtTokenMock,
-    ADAIMock,
     ATokenMock,
     ERC20Mock,
-    IWETH,
     MarginTradingNotifReceiver,
     Vault,
     WETH,
@@ -18,7 +14,6 @@ import { setupTest } from "./fixtures"
 use(require("chai-bignumber")())
 
 const toWei = ethers.utils.parseEther
-const EXP_SCALE = toWei("1")
 
 describe("AaveLendingProtocol", async function () {
     const { owner: ownerAddr, wallet, recipient } = await getNamedAccounts()

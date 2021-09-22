@@ -9,18 +9,17 @@ describe("EIP712", async function () {
     const deployedContracts: { [name: string]: Contract } = {}
     const { owner } = await getNamedAccounts()
     const signer = await ethers.getSigner(owner)
+    const { chainId } = await ethers.provider.getNetwork()
 
     let dai: TokenMock
     let weth: WrappedTokenMock
     let swap: LimitOrderProtocol
-    let chainId
     beforeEach(async function () {
         const results = await deployments.fixture(["LimitOrderProtocol"])
         for (const [name, result] of Object.entries(results)) {
             deployedContracts[name] = await ethers.getContractAt(name, result.address, signer)
         }
         ;({ LimitOrderProtocol: swap, TokenMock: dai, WrappedTokenMock: weth } = deployedContracts as any)
-        chainId = await dai.getChainId()
     })
 
     it("domain separator", async function () {
