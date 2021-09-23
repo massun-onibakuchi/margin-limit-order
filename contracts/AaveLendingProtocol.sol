@@ -4,10 +4,10 @@ pragma solidity 0.8.4;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-import "./limit-order-protocol/interfaces/InteractiveNotificationReceiver.sol";
-import "./interfaces/IMarginTradingNotifReceiver.sol";
-import "./interfaces/IVault.sol";
 import "./interfaces/ILendingProtocol.sol";
+// import "./interfaces/IMarginTradingNotifReceiver.sol";
+
+// Aave interfaces
 import "./interfaces/IAaveLendingPoolProviderV2.sol";
 import "./interfaces/IAaveLendingPoolV2.sol";
 

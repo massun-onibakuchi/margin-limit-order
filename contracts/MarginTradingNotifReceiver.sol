@@ -87,6 +87,7 @@ contract MarginTradingNotifReceiver is IMarginTradingNotifReceiver, Initializabl
         uint256 pullingAmount = (amtToPull * takingAmount) / marginOrderData.takerAmount;
         uint256 amtToDeposit = pullingAmount + takingAmount;
 
+        // if useVault is true, tokens which this contract holds are deposited to a lending protocl
         if (!marginOrderData.useVault) {
             // In addition to `takingAmount`, pull additional tokens to deposit as collateral.
             IERC20(takerAsset).safeTransferFrom(owner(), address(this), pullingAmount);
