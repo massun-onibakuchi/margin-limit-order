@@ -8,12 +8,13 @@ import {
     IWETH,
     LimitOrderProtocol,
     MarginTradingNotifReceiver,
-    Vault,
+    FactoryClone,
     WETH,
 } from "../typechain"
 import { setupTest } from "./fixtures"
 import { buildOrder } from "./helpers/order"
 import { buildOrderData } from "./helpers/utils"
+import { deployClone } from "./helpers/clone"
 use(require("chai-bignumber")())
 
 const toWei = ethers.utils.parseEther
@@ -29,7 +30,7 @@ describe("MarginTradingNotifReceiver", async function () {
 
     let dai: ERC20Mock
     let weth: WETH
-    let vault: Vault
+    let factory: FactoryClone
     let notifReceiver: MarginTradingNotifReceiver
     let aave: AaveLendingProtocol
     let swap: LimitOrderProtocol
@@ -40,8 +41,8 @@ describe("MarginTradingNotifReceiver", async function () {
         ;({
             ERC20Mock: dai,
             WETH: weth,
-            Vault: vault,
-            MarginTradingNotifReceiver: notifReceiver,
+            FactoryClone: factory,
+            // MarginTradingNotifReceiver: notifReceiver,
             AaveLendingProtocol: aave,
             LimitOrderProtocol: swap,
             ADAIMock: aDai,
@@ -49,18 +50,19 @@ describe("MarginTradingNotifReceiver", async function () {
             AWETHMock: aWeth,
         } = (await setupTest()) as any)
 
+        notifReceiver = (await deployClone(factory, signer)) as any
+
         await weth.connect(taker).deposit({ value: toWei("1") })
         await dai.mint(signer.address, toWei("1"))
     })
 
     it("Set up", async function () {
-        expect(await vault.wethToken()).to.eq(weth.address)
-        expect(await vault.approvedReceiver(notifReceiver.address)).to.be.true
-        expect(await vault.owner()).to.eq(owner)
-        expect(await notifReceiver.lendingProtocols(aave.address)).to.be.true
-        expect(await notifReceiver.vault()).to.eq(vault.address)
+        expect(await factory.wethToken()).to.eq(weth.address)
+        expect(await factory.deployedContracts(0)).to.eq(notifReceiver.address)
+        expect(await factory.owner()).to.eq(owner)
+        expect(await factory.lendingProtocols(aave.address)).to.be.true
+        expect(await notifReceiver.factory()).to.eq(factory.address)
         expect(await notifReceiver.limitOrderProtocol()).to.eq(swap.address)
-        expect(await aave.vault()).to.eq(vault.address)
     })
     it("Margin trading", async function () {
         // signer who is a maker would buy WETH and deposit it as collateral, then borrow DAI to sell.
@@ -72,12 +74,11 @@ describe("MarginTradingNotifReceiver", async function () {
             ethers.utils.defaultAbiCoder
                 .encode(
                     [
-                        "tuple(address lendingPool, address wallet, uint256 takerAmount, uint256 amtToLend, bool useVault, bytes data) MarginOrderData",
+                        "tuple(address lendingPool, uint256 takerAmount, uint256 amtToLend, bool useVault, bytes data) MarginOrderData",
                     ],
                     [
                         {
                             lendingPool: aave.address,
-                            wallet: signer.address,
                             takerAmount: amtToBuy,
                             amtToLend: amtToLend,
                             useVault: false,

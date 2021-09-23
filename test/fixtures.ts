@@ -13,11 +13,7 @@ export const setupTest = deployments.createFixture(async ({ deployments, getName
     }
     const notifReceiver = deployedContracts["MarginTradingNotifReceiver"]
 
-    await deployedContracts["Vault"].approveReceiver(notifReceiver.address)
-    await deployedContracts["Vault"].addLendingProtocol(
-        notifReceiver.address,
-        deployedContracts["AaveLendingProtocol"].address,
-    )
+    await deployedContracts["FactoryClone"].addLendingProtocol(deployedContracts["AaveLendingProtocol"].address)
 
     await deployedContracts["ERC20Mock"].mint(wallet, ethers.utils.parseEther("1"))
     await deployedContracts["WETH"]

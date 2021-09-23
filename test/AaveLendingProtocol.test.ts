@@ -7,10 +7,12 @@ import {
     ATokenMock,
     ERC20Mock,
     MarginTradingNotifReceiver,
-    Vault,
+    FactoryClone,
     WETH,
 } from "../typechain"
 import { setupTest } from "./fixtures"
+import { deployClone } from "./helpers/clone"
+
 use(require("chai-bignumber")())
 
 const toWei = ethers.utils.parseEther
@@ -24,7 +26,7 @@ describe("AaveLendingProtocol", async function () {
 
     let dai: ERC20Mock
     let weth: WETH
-    let vault: Vault
+    let factory: FactoryClone
     let notifReceiver: MarginTradingNotifReceiver
     let aave: AaveLendingProtocol
     let pool: AaveLendingPoolMockV2
@@ -35,8 +37,8 @@ describe("AaveLendingProtocol", async function () {
         ;({
             ERC20Mock: dai,
             WETH: weth,
-            Vault: vault,
-            MarginTradingNotifReceiver: notifReceiver,
+            FactoryClone: factory,
+            // MarginTradingNotifReceiver: notifReceiver,
             AaveLendingProtocol: aave,
             AaveLendingPoolMockV2: pool,
             AaveVariableDebtTokenMock: debtDai,
@@ -44,21 +46,14 @@ describe("AaveLendingProtocol", async function () {
             AWETHMock: aWeth,
         } = (await setupTest()) as any)
 
-        await vault.connect(owner).approveReceiver(owner.address)
+        notifReceiver = (await deployClone(factory, signer)) as any
     })
 
     it("Set up", async function () {
-        expect(await vault.wethToken()).to.eq(weth.address)
-        expect(await vault.approvedReceiver(notifReceiver.address)).to.be.true
-        expect(await vault.owner()).to.eq(owner.address)
-        expect(await notifReceiver.lendingProtocols(aave.address)).to.be.true
-        expect(await notifReceiver.vault()).to.eq(vault.address)
-        expect(await aave.vault()).to.eq(vault.address)
-        expect(await vault.approvedReceiver(owner.address)).to.be.true
-    })
-    it("Deposit - can onlyApprovedCaller", async function () {
-        await weth.connect(signer).transfer(aave.address, amount)
-        await expect(aave.connect(signer).lend(weth.address, recipient, "0x")).to.be.reverted
+        expect(await factory.wethToken()).to.eq(weth.address)
+        expect(await factory.owner()).to.eq(owner.address)
+        expect(await factory.lendingProtocols(aave.address)).to.be.true
+        expect(await notifReceiver.factory()).to.eq(factory.address)
     })
     it("Deposit - deposit on behalf of recipient", async function () {
         const balanceBefore = await weth.balanceOf(aWeth.address)
@@ -69,9 +64,6 @@ describe("AaveLendingProtocol", async function () {
         expect(await weth.balanceOf(aave.address)).to.eq(0)
         expect(await weth.balanceOf(aWeth.address)).to.eq(balanceBefore.add(amount))
         expect(await aWeth.balanceOf(recipient)).to.eq(amount)
-    })
-    it("Borrow - can onlyApprovedCaller", async function () {
-        await expect(aave.connect(signer).borrow(weth.address, amount, recipient, interestModel)).to.be.reverted
     })
     it("Borrow - need borowAllowance", async function () {
         await weth.connect(signer).transfer(aave.address, amount)
