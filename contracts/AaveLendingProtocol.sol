@@ -15,12 +15,9 @@ import "./interfaces/IAaveLendingPoolV2.sol";
 contract AaveLendingProtocol is ILendingProtocol {
     using SafeERC20 for IERC20;
 
-    address public immutable vault;
-
     IAaveLendingPoolProviderV2 public immutable aaveProvider;
 
-    constructor(address _vault, IAaveLendingPoolProviderV2 _provider) {
-        vault = _vault;
+    constructor(IAaveLendingPoolProviderV2 _provider) {
         aaveProvider = _provider;
     }
 
@@ -33,7 +30,7 @@ contract AaveLendingProtocol is ILendingProtocol {
         IERC20 token,
         address onBehalfOf,
         bytes memory data
-    ) external override onlyApprovedCaller {
+    ) external override {
         uint256 amount = token.balanceOf(address(this));
         uint256 amountInWei = _convertDecimals(address(token), amount);
         IAaveLendingPoolV2 lendingPool = IAaveLendingPoolV2(aaveProvider.getLendingPool());
@@ -43,7 +40,7 @@ contract AaveLendingProtocol is ILendingProtocol {
     }
 
     /// @notice Borrow tokens on behalf of `onBehalfOf` address . Only white listed caller can call this method.
-    /// @dev Sssume IDebtToken(debtTokenAddress).approveDelegation(borrower, amountInWei);
+    /// @dev Assume IDebtToken(debtTokenAddress).approveDelegation(borrower, amountInWei);
     /// @param token underlying token to deposit
     /// @param amount underlying token amounts
     /// @param onBehalfOf receiver of cToken
@@ -53,7 +50,7 @@ contract AaveLendingProtocol is ILendingProtocol {
         uint256 amount,
         address onBehalfOf,
         bytes memory data
-    ) external override onlyApprovedCaller {
+    ) external override {
         uint256 interestRateMode = abi.decode(data, (uint256));
         uint256 amountInWei = _convertDecimals(address(token), amount);
         IAaveLendingPoolV2 lendingPool = IAaveLendingPoolV2(aaveProvider.getLendingPool());
@@ -74,10 +71,5 @@ contract AaveLendingProtocol is ILendingProtocol {
         } else {
             return amount / 10**(decimasls - 18);
         }
-    }
-
-    modifier onlyApprovedCaller() {
-        require(IVault(vault).approvedReceiver(msg.sender), "only-approved-caller");
-        _;
     }
 }

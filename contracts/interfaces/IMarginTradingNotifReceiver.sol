@@ -8,18 +8,17 @@ import "./ILendingProtocol.sol";
 interface IMarginTradingNotifReceiver is InteractiveNotificationReceiver {
     struct MarginOrderData {
         ILendingProtocol lendingPool;
-        address wallet;
-        // uint256 initialLeverage;
         uint256 takerAmount;
         uint256 amtToLend;
-        // uint256 amtToBorrow;
         bool useVault;
         bytes data;
     }
+
+    function initialize(address _limitOrderProtocol, IERC20 _wethToken) external;
 
     function deposit(IERC20 token, uint256 amount) external;
 
     function withdraw(IERC20 token, uint256 amount) external;
 
-    function addLendingProtocol(address _lendingProtocol) external;
+    function transferOwnership(address newOwner) external;
 }

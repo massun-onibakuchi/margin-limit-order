@@ -2,35 +2,63 @@
 pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import "./limit-order-protocol/LimitOrderProtocol.sol";
-import "./limit-order-protocol/interfaces/InteractiveNotificationReceiver.sol";
+import "./interfaces/IFactoryClone.sol";
 import "./interfaces/IMarginTradingNotifReceiver.sol";
 import "./interfaces/ILendingProtocol.sol";
-import "./interfaces/IVault.sol";
+import "./interfaces/IWETH.sol";
 
-contract MarginTradingNotifReceiver is IMarginTradingNotifReceiver {
+contract MarginTradingNotifReceiver is IMarginTradingNotifReceiver, Initializable, OwnableUpgradeable {
     using SafeERC20 for IERC20;
 
-    address public immutable vault;
-    address public immutable limitOrderProtocol;
+    IERC20 private constant USE_ETHEREUM = IERC20(address(0));
+    IERC20 public wethToken;
 
-    mapping(address => bool) public lendingProtocols;
+    address public factory;
+    address public limitOrderProtocol;
 
-    constructor(address _vault, address _limitOrderProtocol) {
-        vault = _vault;
+    function initialize(address _limitOrderProtocol, IERC20 _wethToken) public override initializer {
+        __Ownable_init();
+        factory = msg.sender;
         limitOrderProtocol = _limitOrderProtocol;
+        wethToken = _wethToken;
     }
 
-    function deposit(IERC20 token, uint256 amount) external override {
-        IVault(vault).deposit(token, msg.sender, msg.sender, amount);
+    function deposit(IERC20 token_, uint256 amount) external override {
+        // Effects
+        IERC20 token = _toERC20(token_);
+
+        // Interactions
+        if (token_ == USE_ETHEREUM) {
+            IWETH(address(wethToken)).deposit{ value: amount }();
+        } else {
+            token.safeTransferFrom(msg.sender, address(this), amount);
+        }
     }
 
-    function withdraw(IERC20 token, uint256 amount) external override {
-        IVault(vault).withdraw(token, msg.sender, msg.sender, amount);
+    function withdraw(IERC20 token_, uint256 amount) external override {
+        // Effects
+        IERC20 token = _toERC20(token_);
+
+        // Interactions
+        if (token_ == USE_ETHEREUM) {
+            IWETH(address(wethToken)).withdraw(amount);
+            // solhint-disable-next-line
+            (bool success, ) = msg.sender.call{ value: amount }("");
+            require(success, "eth-transfer-failed");
+        } else {
+            token.safeTransfer(msg.sender, amount);
+        }
+    }
+
+    function _toERC20(IERC20 token_) internal view returns (IERC20) {
+        return token_ == USE_ETHEREUM ? wethToken : token_;
     }
 
     /// @notice Callback, for to notify maker on order execution.
+    ///         Deposit tokens which maker bought to lending protocol, and then borrow tokens which maker want to sell
+    ///         and transfer it to the owner.
     /// @param taker limitOrderProtocol address
     /// @param makerAsset asset which maker account want to sell
     /// @param takerAsset asset which maker account want to bought
@@ -45,12 +73,11 @@ contract MarginTradingNotifReceiver is IMarginTradingNotifReceiver {
         uint256 takingAmount,
         bytes memory interactiveData
     ) external override {
-        require(msg.sender == limitOrderProtocol, "only-limit-order-protocol");
-
         MarginOrderData memory marginOrderData = abi.decode(interactiveData, (MarginOrderData));
         ILendingProtocol pool = marginOrderData.lendingPool;
 
-        require(lendingProtocols[address(pool)], "not-approved-lending-protocol");
+        require(msg.sender == limitOrderProtocol, "only-limit-order-protocol");
+        require(IFactoryClone(factory).lendingProtocols(address(pool)), "not-approved-lending-protocol");
         require(
             marginOrderData.amtToLend >= takingAmount, /* || marginOrderData.amtToBorrow >= makingAmount */
             "invalid-amount"
@@ -60,45 +87,37 @@ contract MarginTradingNotifReceiver is IMarginTradingNotifReceiver {
         uint256 pullingAmount = (amtToPull * takingAmount) / marginOrderData.takerAmount;
         uint256 amtToDeposit = pullingAmount + takingAmount;
 
-        // In addition to `takingAmount`, pull additional tokens to deposit as collateral.
-        _pullTokens(IERC20(takerAsset), marginOrderData.wallet, pullingAmount, marginOrderData.useVault);
+        if (!marginOrderData.useVault) {
+            // In addition to `takingAmount`, pull additional tokens to deposit as collateral.
+            IERC20(takerAsset).safeTransferFrom(owner(), address(this), pullingAmount);
+        }
+
+        require(
+            IERC20(takerAsset).balanceOf(address(this)) >= amtToDeposit,
+            "balance-received-is-less-than-the-deposit-amount"
+        );
 
         // Deposit collateral which maker buy and then borrow asset which maker would sell.
-        _lend(pool, takerAsset, marginOrderData.wallet, amtToDeposit, takingAmount, marginOrderData.data);
+        _lend(pool, takerAsset, owner(), amtToDeposit, marginOrderData.data);
 
-        _borrow(pool, makerAsset, marginOrderData.wallet, makingAmount, marginOrderData.data);
+        _borrow(pool, makerAsset, owner(), makingAmount, marginOrderData.data);
 
         // Transfer borrowed asset to wallet address.
         uint256 amtToSell = IERC20(makerAsset).balanceOf(address(this));
         require(makingAmount >= amtToSell, "inconsistent-balance");
-        IERC20(makerAsset).safeTransfer(marginOrderData.wallet, amtToSell);
-    }
-
-    function _pullTokens(
-        IERC20 token,
-        address onBehalfOf,
-        uint256 amount,
-        bool useVault
-    ) internal {
-        if (useVault) {
-            IVault(vault).transferToReceiver(token, onBehalfOf, amount);
-        } else {
-            token.safeTransferFrom(onBehalfOf, address(this), amount);
-        }
+        IERC20(makerAsset).safeTransfer(owner(), amtToSell);
     }
 
     /// @param pool lending protocols
     /// @param takerAsset taker asset i.e. asset which maker account bought
     /// @param onBehalfOf debt being incurred by `onBehalfOf`
     /// @param amtToDeposit amount to deposit to lending protocol
-    /// @param takingAmount amounts of taker asset
     /// @param data arbitrary data
     function _lend(
         ILendingProtocol pool,
         address takerAsset,
         address onBehalfOf,
         uint256 amtToDeposit,
-        uint256 takingAmount,
         bytes memory data
     ) internal {
         IERC20(takerAsset).transfer(address(pool), amtToDeposit);
@@ -109,37 +128,21 @@ contract MarginTradingNotifReceiver is IMarginTradingNotifReceiver {
     /// @param pool lending protocols
     /// @param makerAsset maker asset i.e. asset which maker account sold
     /// @param onBehalfOf debt being incurred by `onBehalfOf`
-    /// @param makingAmount amounts of maker asset
+    /// @param borrowAmount amounts of maker asset
     /// @param data arbitrary data
     function _borrow(
         ILendingProtocol pool,
         address makerAsset,
         address onBehalfOf,
-        uint256 makingAmount,
+        uint256 borrowAmount,
         bytes memory data
     ) internal {
-        // uint256 amtToPull = makingAmount - amtToBorrow;
-        // if (amtToPull > 0) {
-        //     if (useVault) {
-        //         IVault(vault).transferToReceiver(IERC20(makerAsset), onBehalfOf, amtToPull);
-        //     } else {
-        //         IERC20(makerAsset).safeTransferFrom(onBehalfOf, address(this), amtToPull);
-        //     }
-        // }
-        pool.borrow(IERC20(makerAsset), makingAmount, onBehalfOf, data);
+        pool.borrow(IERC20(makerAsset), borrowAmount, onBehalfOf, data);
     }
 
-    function _approveERC20(
-        IERC20 token,
-        address spender,
-        uint256 amount
-    ) internal {
-        IERC20(token).safeApprove(spender, 0);
-        IERC20(token).safeApprove(spender, amount);
+    function transferOwnership(address newOwner) public override(IMarginTradingNotifReceiver, OwnableUpgradeable) {
+        super.transferOwnership(newOwner);
     }
 
-    function addLendingProtocol(address _lendingProtocol) external override {
-        require(msg.sender == vault, "only-vault");
-        lendingProtocols[_lendingProtocol] = true;
-    }
+    receive() external payable {}
 }

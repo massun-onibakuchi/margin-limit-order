@@ -12,10 +12,13 @@ const notifReceiverDeployment: DeployFunction = async (hre: HardhatRuntimeEnviro
 
     const options = { from: owner }
 
-    const vault = await deploy("Vault", { ...options, args: [limitOrderProtocol.address, weth.address] })
-    const notifReceiver = await deploy("MarginTradingNotifReceiver", {
+    const implementation = await deploy("MarginTradingNotifReceiver", {
         ...options,
-        args: [vault.address, limitOrderProtocol.address],
+    })
+
+    const factory = await deploy("FactoryClone", {
+        ...options,
+        args: [limitOrderProtocol.address, implementation.address, weth.address],
     })
 }
 export default notifReceiverDeployment
