@@ -1,34 +1,26 @@
-# Cream Gelato Liquidation Protection
-Automated Health Factor Maintenance Proof of Concept
+# Margin Limit Order
+Margin trading on the 1inch Limit Order Protocol:PoC
 
-Cream Fi and Gelato Network integration
-
-## Frontend
-Protocol Monorepo including frontend [here](https://github.com/massun-onibakuchi/cream-gelato-loan-protection)
-
-see Notes section
+When a limit order is executed, the contract receives a callback and builds a leveraged position by depositing the bought tokens as collateral in the lending protocol (such as Aave) and borrowing the sold tokens. All of this is done by the taker in a single transaction.
 
 ## Concept
+### 1inch Limit Order Protocol
+1inch limit order protocol is a set of smart contracts. Key features of the protocol is extreme flexibility and high gas efficiency that achieved by using two different order types - regular Limit Order and RFQ Order.
 
-CreamFi users can specify their Minimum Health Factor and their Wanted Health Factor. Once a user’s Health Factor on CreamFi drops below their specified minimum threshold, Gelato will rebalance the user’s debt position on Cream, to attain the user’s specified Wanted Health Factor again. The bots achieve this on behalf of the user by swapping some of the user’s collateral for debt token and then repaying some of that debt. The bots swap the user’s collateral on Uniswap V2. This repo use Gelato PokeMe for autometed task. 
+#### Limit Order
+1inch Limit Order Protocol provides extremely flexible limit order, can be configured with:
 
-This liquidation protection system is inspired by [Cono Finance](https://medium.com/gelato-network/cono-finance-is-here-to-protect-your-aave-debt-positions-wagmi-4ed1b57f8ed5)
+ 1. Order execution predicate.
+ 2. Helper function for asset price evaluation.
+ 3. Callback, for to notify maker on order execution.
 
-### Notes
-Currently, Cream is the same flash loan design as aave v1. This type of flash loan verifies that the amount of tokens the protocol has before and after the flash loan is constant (+fee). Aave v2 verifies that users can return the tokens they borrowed with flash loans (+fee). Therefore,in v1 design it is not possible to redeem cToken(crToken,aToken) in the flash loan callback function. 
+Maker submits limit order with callback function information added. via 1inch API. When you reach the price you specified, the taker should execute your limit order. When the order is executed, your purchased token will be transferred to the specified contract `MarginTradingNotifReceirver`, and the callback    function will be called.   
+The Contract then deposits the token and additional collateral with aave, and use this collateral to borrow tokens to sell to the taker.The borrowed tokens are transferred to the taker, resulting in the creation of a leveraged position.
 
-*In this repo, we use a mock crToken that has the same flash loan design as Aave v2.* 
+![Figures](./images/figures.svg)
 
-See the links below for detailed differences
-
-[Aave Flash loans guide](https://docs.aave.com/developers/guides/flash-loans)
-
-[Aave v1 Flash loan](https://github.com/aave/aave-protocol/blob/4b4545fb583fd4f400507b10f3c3114f45b8a037/contracts/lendingpool/LendingPool.sol#L888-L891)
-
-[Aave v2 Flash loan](https://github.com/aave/protocol-v2/blob/master/contracts/protocol/lendingpool/LendingPool.sol#L537)
-
-## Usage
-## Setup
+## Getting Started 
+### Installing
 To install dependencies, run
 
 `yarn`
@@ -38,18 +30,19 @@ To install dependencies, run
 
 ### Deploy
 `yarn deploy`
+
 ### Test
 `yarn test`
 
 ## Link
-[Cream fi Gitcoin #2 Loan saver](https://gitcoin.co/issue/CreamFi/Open-Defi/2/100026342)
+[1inch dApp](https://app.1inch.io/#/1/classic/limit-order/WETH/DAI)
 
-[Cream fi Doc](https://docs.cream.finance)
+[1inch Limit Order Protocol Doc](https://docs.1inch.io/limit-order-protocol/)
 
-[GitHub:Gelato PokeMe](https://github.com/gelatodigital/poke-me/)
+[1inch Limit Order Protocol Utils Doc](https://docs.1inch.io/limit-order-protocol-utils/)
 
-[Cono finance](https://www.cono.finance/assets)
+[GitHub: Limit Ordr Protocol](https://github.com/1inch/limit-order-protocol/)
 
-[Medium:Gelato Receives Grant From Aave to Protect Users From Liquidation](https://medium.com/gelato-network/gelato-receives-grant-from-aave-to-protect-users-from-liquidation-a265c3256f5d)
+[GitHub: Limit Ordr Protocol Utils](https://github.com/1inch/limit-order-protocol-utils/)
 
-[Cono Finance Is Here To Protect Your Aave Debt Positions — WAGMI!](https://medium.com/gelato-network/cono-finance-is-here-to-protect-your-aave-debt-positions-wagmi-4ed1b57f8ed5)
+[Aave Flash Credit Delegation](https://docs.aave.com/developers/the-core-protocol/lendingpool#borrow)

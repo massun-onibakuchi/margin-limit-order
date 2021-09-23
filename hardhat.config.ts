@@ -12,7 +12,7 @@ const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY
 const BLOCK_NUMBER = process.env.BLOCK_NUMBER
 const MNEMONIC = process.env.MNEMONIC
 
-if (!ALCHEMY_API_KEY) throw new Error("ALCHEMY_API_KEY_NOT_FOUND")
+// if (!ALCHEMY_API_KEY) throw new Error("ALCHEMY_API_KEY_NOT_FOUND")
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
