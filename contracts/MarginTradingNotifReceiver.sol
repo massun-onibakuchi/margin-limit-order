@@ -18,6 +18,9 @@ contract MarginTradingNotifReceiver is IMarginTradingNotifReceiver, Initializabl
     address public factory;
     address public limitOrderProtocol;
 
+    event Deposit(IERC20 indexed token, uint256 amount);
+    event Withdrawal(IERC20 indexed token, uint256 amount);
+
     function initialize(address _limitOrderProtocol, IERC20 _wethToken) public override initializer {
         __Ownable_init();
         factory = msg.sender;
@@ -35,6 +38,7 @@ contract MarginTradingNotifReceiver is IMarginTradingNotifReceiver, Initializabl
         } else {
             token.safeTransferFrom(msg.sender, address(this), amount);
         }
+        emit Deposit(token, amount);
     }
 
     function withdraw(IERC20 token_, uint256 amount) external override {
@@ -50,6 +54,7 @@ contract MarginTradingNotifReceiver is IMarginTradingNotifReceiver, Initializabl
         } else {
             token.safeTransfer(msg.sender, amount);
         }
+        emit Withdrawal(token, amount);
     }
 
     function _toERC20(IERC20 token_) internal view returns (IERC20) {

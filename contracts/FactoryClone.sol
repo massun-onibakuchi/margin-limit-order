@@ -18,6 +18,8 @@ contract FactoryClone is IFactoryClone, Ownable {
 
     mapping(address => bool) public override lendingProtocols;
 
+    event Deploy(address indexed clone, address indexed caller);
+
     constructor(
         address _limitOrderProtocol,
         address _implementation,
@@ -34,6 +36,9 @@ contract FactoryClone is IFactoryClone, Ownable {
 
     function deploy() external override returns (address clone) {
         clone = Clones.clone(implementation);
+
+        emit Deploy(clone, msg.sender);
+
         deployedContracts.push(clone);
         IMarginTradingNotifReceiver notifReceiver = IMarginTradingNotifReceiver(clone);
         notifReceiver.initialize(limitOrderProtocol, wethToken);
