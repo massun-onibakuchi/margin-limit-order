@@ -12,6 +12,7 @@ const aaveLendingProtocolDeployment: DeployFunction = async (hre: HardhatRuntime
 
     const dai = await get("ERC20Mock")
     const weth = await get("WETH")
+    const factory = await get("FactoryClone")
 
     const options = { from: ownerAddr }
     const ADDRESS_ZERO = ethers.constants.AddressZero
@@ -34,7 +35,7 @@ const aaveLendingProtocolDeployment: DeployFunction = async (hre: HardhatRuntime
         ],
     })
     // AaveLendingProtocol (Aave wrapper)
-    await deploy("AaveLendingProtocol", { ...options, args: [provider.address] })
+    await deploy("AaveLendingProtocol", { ...options, args: [factory.address, provider.address] })
 
     // Set Aave mock
     const providerContract = await ethers.getContractAt("AaveLendingPoolProviderMock", provider.address)

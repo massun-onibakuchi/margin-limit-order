@@ -13,4 +13,8 @@ interface IFactoryClone {
     function lendingProtocols(address _protocol) external view returns (bool);
 
     function deploy() external returns (address clone);
+
+    function isRegistered(address _notifReceiver) external returns (bool);
+
+    function getDeployedContract(uint256 index) external view returns (address);
 }

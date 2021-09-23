@@ -150,5 +150,9 @@ contract MarginTradingNotifReceiver is IMarginTradingNotifReceiver, Initializabl
         super.transferOwnership(newOwner);
     }
 
+    function owner() public view override(IMarginTradingNotifReceiver, OwnableUpgradeable) returns (address) {
+        return super.owner();
+    }
+
     receive() external payable {}
 }

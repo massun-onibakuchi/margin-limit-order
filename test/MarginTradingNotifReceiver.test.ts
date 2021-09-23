@@ -58,7 +58,7 @@ describe("MarginTradingNotifReceiver", async function () {
 
     it("Set up", async function () {
         expect(await factory.wethToken()).to.eq(weth.address)
-        expect(await factory.deployedContracts(0)).to.eq(notifReceiver.address)
+        expect(await factory.deployedContracts()).to.include(notifReceiver.address)
         expect(await factory.owner()).to.eq(owner)
         expect(await factory.lendingProtocols(aave.address)).to.be.true
         expect(await notifReceiver.factory()).to.eq(factory.address)

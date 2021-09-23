@@ -21,4 +21,6 @@ interface IMarginTradingNotifReceiver is InteractiveNotificationReceiver {
     function withdraw(IERC20 token, uint256 amount) external;
 
     function transferOwnership(address newOwner) external;
+
+    function owner() external view returns (address);
 }
