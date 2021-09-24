@@ -1,11 +1,12 @@
 # Margin Limit Order
 Margin trading on the 1inch Limit Order Protocol:PoC
 
-When a limit order is executed, the contract receives a callback and builds a leveraged position by depositing the bought tokens as collateral in the lending protocol (such as Aave) and borrowing the sold tokens. All of this is done by the taker in a single transaction.
+1inch Limit Order Protocol is a set of smart contracts. When a limit order is executed, A contract receives a callback and builds a leveraged position by depositing the bought tokens as collateral in the lending protocol (such as Aave) and borrowing the sold tokens. All of this is done by the taker in a single transaction.
 
 ## Concept
+
 ### 1inch Limit Order Protocol
-1inch limit order protocol is a set of smart contracts. Key features of the protocol is extreme flexibility and high gas efficiency that achieved by using two different order types - regular Limit Order and RFQ Order.
+Key features of the protocol is extreme flexibility and high gas efficiency that achieved by using two different order types - regular Limit Order and RFQ Order.
 
 #### Limit Order
 1inch Limit Order Protocol provides extremely flexible limit order, can be configured with:
@@ -28,11 +29,16 @@ To install dependencies, run
 ### Complipe
 `yarn compile`
 
-### Deploy
+### Deployment
+To depoly on the hardhat network, run
+
 `yarn deploy`
 
 ### Test
 `yarn test`
+
+If it doesn't work, run  
+`yarn hardhat test FILE --deploy-fixture`
 
 ## Link
 [1inch dApp](https://app.1inch.io/#/1/classic/limit-order/WETH/DAI)
