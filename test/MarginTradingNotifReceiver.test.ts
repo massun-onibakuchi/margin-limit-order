@@ -20,10 +20,10 @@ use(require("chai-bignumber")())
 const toWei = ethers.utils.parseEther
 
 describe("MarginTradingNotifReceiver", async function () {
-    const { owner, wallet, taker: takerAddr } = await getNamedAccounts()
-    const { chainId } = await ethers.provider.getNetwork()
-    const signer = await ethers.getSigner(wallet) // maker
-    const taker = await ethers.getSigner(takerAddr)
+    let chainId
+    let signer
+    let taker
+    let owner
 
     const amount = toWei("1")
     const interestModel = ethers.utils.defaultAbiCoder.encode(["uint256"], [2])
@@ -37,6 +37,13 @@ describe("MarginTradingNotifReceiver", async function () {
     let aDai: ATokenMock
     let aWeth: ATokenMock
     let debtDai: AaveVariableDebtTokenMock
+    before(async function () {
+        ;({ owner } = await getNamedAccounts())
+        const { wallet, taker: takerAddr } = await getNamedAccounts()
+        ;({ chainId } = await ethers.provider.getNetwork())
+        signer = await ethers.getSigner(wallet) // maker
+        taker = await ethers.getSigner(takerAddr)
+    })
     beforeEach(async function () {
         ;({
             ERC20Mock: dai,

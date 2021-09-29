@@ -13,16 +13,21 @@ const toWei = ethers.utils.parseEther
 const zeroAddress = ethers.constants.AddressZero
 
 describe("LimitOrderProtocol", async function () {
-    const { chainId } = await ethers.provider.getNetwork()
+    let chainId
+    let signer
+    let taker
+
     let dai: ERC20Mock
     let weth: WETH
     let swap: LimitOrderProtocol
     let notificationReceiver: InteractiveNotificationReceiverMock
-    const { wallet, taker: takerAddr } = await getNamedAccounts()
-    const signer = await ethers.getSigner(wallet) // maker
-    const taker = await ethers.getSigner(takerAddr)
     const deployedContracts: { [name: string]: Contract } = {}
-
+    before(async function () {
+        ;({ chainId } = await ethers.provider.getNetwork())
+        const { wallet, taker: takerAddr } = await getNamedAccounts()
+        signer = await ethers.getSigner(wallet) // maker
+        taker = await ethers.getSigner(takerAddr)
+    })
     beforeEach(async function () {
         const { owner } = await getNamedAccounts()
         const deployer = await ethers.getSigner(owner)
@@ -51,7 +56,7 @@ describe("LimitOrderProtocol", async function () {
     it("Interaction - should fill and unwrap token", async function () {
         // signer who is a maker would sell his DAI to buy WETH
 
-        const interaction = notificationReceiver.address + wallet.substr(2)
+        const interaction = notificationReceiver.address + signer.address.substr(2)
 
         const order = buildOrder(
             swap,

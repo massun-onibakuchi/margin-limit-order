@@ -18,9 +18,9 @@ use(require("chai-bignumber")())
 const toWei = ethers.utils.parseEther
 
 describe("AaveLendingProtocol", async function () {
-    const { owner: ownerAddr, wallet, recipient } = await getNamedAccounts()
-    const signer = await ethers.getSigner(wallet)
-    const owner = await ethers.getSigner(ownerAddr)
+    let signer
+    let owner
+    let recipient
     const amount = toWei("1")
     const interestModel = ethers.utils.defaultAbiCoder.encode(["uint256"], [2])
 
@@ -33,6 +33,12 @@ describe("AaveLendingProtocol", async function () {
     let aDai: ATokenMock
     let aWeth: ATokenMock
     let debtDai: AaveVariableDebtTokenMock
+    before(async function () {
+        ;({ recipient } = await getNamedAccounts())
+        const { owner: ownerAddr, wallet } = await getNamedAccounts()
+        signer = await ethers.getSigner(wallet)
+        owner = await ethers.getSigner(ownerAddr)
+    })
     beforeEach(async function () {
         ;({
             ERC20Mock: dai,

@@ -9,8 +9,9 @@ use(require("chai-bignumber")())
 const toWei = ethers.utils.parseEther
 
 describe("FactoryClone", async function () {
-    const { owner, wallet } = await getNamedAccounts()
-    const signer = await ethers.getSigner(wallet)
+    let wallet
+    let signer
+    let owner
 
     let token: ERC20Mock
     let weth: IWETH
@@ -18,6 +19,10 @@ describe("FactoryClone", async function () {
     let notifReceiver: MarginTradingNotifReceiver
     let implementation: MarginTradingNotifReceiver
     let aave: AaveLendingProtocol
+    before(async function () {
+        ;({ owner, wallet } = await getNamedAccounts())
+        signer = await ethers.getSigner(wallet)
+    })
     beforeEach(async function () {
         ;({
             ERC20Mock: token,

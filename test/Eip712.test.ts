@@ -7,13 +7,16 @@ import { WrappedTokenMock, TokenMock, LimitOrderProtocol } from "../typechain"
 
 describe("EIP712", async function () {
     const deployedContracts: { [name: string]: Contract } = {}
-    const { owner } = await getNamedAccounts()
-    const signer = await ethers.getSigner(owner)
-    const { chainId } = await ethers.provider.getNetwork()
-
+    let signer
+    let chainId
     let dai: TokenMock
     let weth: WrappedTokenMock
     let swap: LimitOrderProtocol
+    before(async function () {
+        const { owner } = await getNamedAccounts()
+        signer = await ethers.getSigner(owner)
+        ;({ chainId } = await ethers.provider.getNetwork())
+    })
     beforeEach(async function () {
         const results = await deployments.fixture(["LimitOrderProtocol"])
         for (const [name, result] of Object.entries(results)) {
