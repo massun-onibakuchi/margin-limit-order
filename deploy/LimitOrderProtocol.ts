@@ -10,10 +10,7 @@ const limitOrderProtocolDeployment: DeployFunction = async (hre: HardhatRuntimeE
     const options = { from: owner }
     await deploy("LimitOrderProtocol", options)
     await deploy("InteractiveNotificationReceiverMock", options)
-    // await deploy("TokenMock", { ...options, args: ["Dai", "DAI"] })
-    // await deploy("WrappedTokenMock", { ...options, args: ["WETH", "WETH"] })
     await deploy("AggregatorMock", { ...options, args: [10] })
 }
 export default limitOrderProtocolDeployment
 limitOrderProtocolDeployment.tags = ["LimitOrderProtocol"]
-limitOrderProtocolDeployment.dependencies = ["MockToken"]

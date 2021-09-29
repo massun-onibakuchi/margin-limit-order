@@ -15,7 +15,7 @@ Key features of the protocol is extreme flexibility and high gas efficiency that
  2. Helper function for asset price evaluation.
  3. Callback, for to notify maker on order execution.
 
-Maker submits limit order with callback function information added. via 1inch API. When you reach the price you specified, the taker should execute your limit order. When the order is executed, your purchased token will be transferred to the specified contract `MarginTradingNotifReceirver`, and the callback    function will be called.   
+Maker submits limit order with callback function information added. via 1inch API. When the price reach the one you specified, the taker would execute your limit order. When the order is executed, your purchased token will be transferred to the specified contract `MarginTradingNotifReceirver`, and the callback    function will be called.   
 The Contract then deposits the token and additional collateral with aave, and use this collateral to borrow tokens to sell to the taker.The borrowed tokens are transferred to the taker, resulting in the creation of a leveraged position.
 
 ![Figures](./images/figures.svg)
@@ -37,7 +37,8 @@ To depoly on the hardhat network, run
 ### Test
 `yarn test`
 
-If it doesn't work, run  
+Or
+
 `yarn hardhat test FILE --deploy-fixture`
 
 ## Link
