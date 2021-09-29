@@ -2,7 +2,7 @@ import { Contract } from "ethers"
 import hre, { ethers, deployments, getNamedAccounts } from "hardhat"
 
 export const setupTest = deployments.createFixture(async ({ deployments, getNamedAccounts, ethers }, options) => {
-    await deployments.fixture() // ensure you start from a fresh deployments
+    await deployments.fixture(["Aave"]) // ensure you start from a fresh deployments
     const { owner, wallet } = await getNamedAccounts()
     const deployer = await ethers.getSigner(owner)
 

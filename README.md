@@ -35,10 +35,10 @@ To depoly on the hardhat network, run
 `yarn deploy`
 
 ### Test
+To run all tests on the hardhat network,
 `yarn test`
 
-Or
-
+Or there might be some bugs in hardhat plugin. If it doesn't work, run   
 `yarn hardhat test FILE --deploy-fixture`
 
 ## Link

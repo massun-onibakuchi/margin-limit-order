@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { Contract } from "ethers"
+import { Contract, Signer } from "ethers"
 import { deployments, ethers, getNamedAccounts } from "hardhat"
 import { domainSeparator } from "./helpers/eip712"
 import { name, version } from "./helpers/utils"
@@ -7,7 +7,7 @@ import { WrappedTokenMock, TokenMock, LimitOrderProtocol } from "../typechain"
 
 describe("EIP712", async function () {
     const deployedContracts: { [name: string]: Contract } = {}
-    let signer
+    let signer: Signer
     let chainId
     let dai: TokenMock
     let weth: WrappedTokenMock
@@ -18,7 +18,7 @@ describe("EIP712", async function () {
         ;({ chainId } = await ethers.provider.getNetwork())
     })
     beforeEach(async function () {
-        const results = await deployments.fixture(["LimitOrderProtocol"])
+        const results = await deployments.fixture(["MockToken", "LimitOrderProtocol"])
         for (const [name, result] of Object.entries(results)) {
             deployedContracts[name] = await ethers.getContractAt(name, result.address, signer)
         }

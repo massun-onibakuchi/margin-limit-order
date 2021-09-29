@@ -31,7 +31,7 @@ describe("LimitOrderProtocol", async function () {
     beforeEach(async function () {
         const { owner } = await getNamedAccounts()
         const deployer = await ethers.getSigner(owner)
-        const results = await deployments.fixture(["LimitOrderProtocol"])
+        const results = await deployments.fixture(["MockToken", "LimitOrderProtocol"])
         for (const [name, result] of Object.entries(results)) {
             deployedContracts[name] = await ethers.getContractAt(name, result.address, deployer)
         }

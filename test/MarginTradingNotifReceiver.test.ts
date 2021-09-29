@@ -5,7 +5,6 @@ import {
     AaveVariableDebtTokenMock,
     ATokenMock,
     ERC20Mock,
-    IWETH,
     LimitOrderProtocol,
     MarginTradingNotifReceiver,
     FactoryClone,
@@ -25,7 +24,6 @@ describe("MarginTradingNotifReceiver", async function () {
     let taker
     let owner
 
-    const amount = toWei("1")
     const interestModel = ethers.utils.defaultAbiCoder.encode(["uint256"], [2])
 
     let dai: ERC20Mock
@@ -49,7 +47,6 @@ describe("MarginTradingNotifReceiver", async function () {
             ERC20Mock: dai,
             WETH: weth,
             FactoryClone: factory,
-            // MarginTradingNotifReceiver: notifReceiver,
             AaveLendingProtocol: aave,
             LimitOrderProtocol: swap,
             ADAIMock: aDai,

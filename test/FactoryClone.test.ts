@@ -3,15 +3,14 @@ import { expect, use } from "chai"
 import { AaveLendingProtocol, ERC20Mock, FactoryClone, IWETH, MarginTradingNotifReceiver } from "../typechain"
 import { setupTest } from "./fixtures"
 import { deployClone } from "./helpers/clone"
+import { Signer } from "@ethersproject/abstract-signer"
 
 use(require("chai-bignumber")())
 
-const toWei = ethers.utils.parseEther
-
 describe("FactoryClone", async function () {
-    let wallet
-    let signer
-    let owner
+    let wallet: string
+    let owner: string
+    let signer: Signer
 
     let token: ERC20Mock
     let weth: IWETH

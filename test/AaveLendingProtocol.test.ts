@@ -12,17 +12,18 @@ import {
 } from "../typechain"
 import { setupTest } from "./fixtures"
 import { deployClone } from "./helpers/clone"
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
 
 use(require("chai-bignumber")())
 
 const toWei = ethers.utils.parseEther
 
 describe("AaveLendingProtocol", async function () {
-    let signer
-    let owner
-    let recipient
     const amount = toWei("1")
     const interestModel = ethers.utils.defaultAbiCoder.encode(["uint256"], [2])
+    let signer: SignerWithAddress
+    let owner: SignerWithAddress
+    let recipient: string
 
     let dai: ERC20Mock
     let weth: WETH
@@ -44,7 +45,6 @@ describe("AaveLendingProtocol", async function () {
             ERC20Mock: dai,
             WETH: weth,
             FactoryClone: factory,
-            // MarginTradingNotifReceiver: notifReceiver,
             AaveLendingProtocol: aave,
             AaveLendingPoolMockV2: pool,
             AaveVariableDebtTokenMock: debtDai,
