@@ -25,24 +25,10 @@ const config: HardhatUserConfig = {
         },
         hardhat: {
             chainId: 1,
-            forking: {
-                url: `https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_API_KEY}`,
-                blockNumber: parseInt(BLOCK_NUMBER),
-                enabled: true,
-            },
-        },
-        ropsten: {
-            url: `https://eth-ropsten.alchemyapi.io/v2/${ALCHEMY_API_KEY}`,
-            accounts: {
-                mnemonic: MNEMONIC,
-            },
         },
     },
     dependencyCompiler: {
         paths: [],
-    },
-    etherscan: {
-        apiKey: ETHERSCAN_API_KEY,
     },
     namedAccounts: {
         wallet: {
