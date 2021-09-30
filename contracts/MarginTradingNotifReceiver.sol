@@ -9,6 +9,10 @@ import "./interfaces/IMarginTradingNotifReceiver.sol";
 import "./interfaces/ILendingProtocol.sol";
 import "./interfaces/IWETH.sol";
 
+/// @title MarginTradingNotifReceiver
+/// @dev This contract receives callback function from 1inch Limit Order Protocol.
+///      When thec callback is executed, this contract will deposit toknes which maker buy and additional collateral.
+///      Maker address is not given by limit order protocol, So it seems that this contract needs to be deployed per user address.
 contract MarginTradingNotifReceiver is IMarginTradingNotifReceiver, Initializable, OwnableUpgradeable {
     using SafeERC20 for IERC20;
 

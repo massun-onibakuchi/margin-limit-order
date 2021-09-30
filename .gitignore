@@ -5,6 +5,7 @@
 
 # logg
 *.log
+/.vscode
 
 # hardhat
 /artifacts
